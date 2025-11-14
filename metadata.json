@@ -1,0 +1,7 @@
+{
+  "name": "Echosketch: Voice to Visuals",
+  "description": "A multimodal AI application that converts spoken audio into AI-generated images in real time using the Gemini API.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
