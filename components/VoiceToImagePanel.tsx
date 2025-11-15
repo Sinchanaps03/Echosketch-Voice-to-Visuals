@@ -33,45 +33,116 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
+      recognitionRef.current.continuous = true; // Enable continuous recognition
+      recognitionRef.current.interimResults = true; // Enable interim results for real-time feedback
       recognitionRef.current.lang = 'en-US';
+      recognitionRef.current.maxAlternatives = 1;
+
+      recognitionRef.current.onstart = () => {
+        console.log('🎤 Speech recognition started');
+        setIsListening(true);
+      };
 
       recognitionRef.current.onresult = (event: any) => {
-        const speechToText = event.results[0][0].transcript;
-        setTranscript(speechToText);
-        setIsListening(false);
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        // Process all results
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        // Update transcript with final results, or show interim for feedback
+        if (finalTranscript) {
+          setTranscript(prev => (prev + ' ' + finalTranscript).trim());
+          console.log('✅ Final transcript:', finalTranscript.trim());
+        } else if (interimTranscript) {
+          // Show interim results in real-time (optional: you can display this separately)
+          console.log('⏳ Interim:', interimTranscript);
+        }
       };
 
       recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
+        console.error('❌ Speech recognition error:', event.error);
+        
+        // Handle specific errors
+        if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+          alert('Microphone permission denied. Please allow microphone access in your browser settings.');
+        } else if (event.error === 'no-speech') {
+          console.warn('No speech detected. Please try again.');
+        } else if (event.error === 'network') {
+          alert('Network error. Please check your internet connection.');
+        } else {
+          alert(`Speech recognition error: ${event.error}`);
+        }
+        
         setIsListening(false);
       };
 
       recognitionRef.current.onend = () => {
+        console.log('🛑 Speech recognition ended');
         setIsListening(false);
       };
+    } else {
+      console.warn('⚠️ Speech Recognition API not supported in this browser');
     }
 
     return () => {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          // Ignore errors on cleanup
+        }
       }
     };
   }, []);
 
   const startListening = () => {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      alert('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
+      return;
+    }
+
     if (recognitionRef.current) {
-      setIsListening(true);
-      recognitionRef.current.start();
-    } else {
-      alert('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
+      try {
+        setIsListening(true);
+        recognitionRef.current.start();
+        console.log('🎙️ Starting to listen...');
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        setIsListening(false);
+        
+        // If already started, stop and restart
+        if (error instanceof Error && error.message.includes('already started')) {
+          recognitionRef.current.stop();
+          setTimeout(() => {
+            try {
+              recognitionRef.current.start();
+              setIsListening(true);
+            } catch (e) {
+              console.error('Failed to restart:', e);
+              setIsListening(false);
+            }
+          }, 100);
+        }
+      }
     }
   };
 
   const stopListening = () => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+        console.log('⏹️ Stopped listening');
+      } catch (error) {
+        console.error('Error stopping speech recognition:', error);
+      }
       setIsListening(false);
     }
   };
