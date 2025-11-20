@@ -10,6 +10,7 @@ const SignUpPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { signUp } = useAuth();
 
@@ -20,12 +21,18 @@ const SignUpPage: React.FC = () => {
         return;
     }
     setError(null);
+    setSuccess(null);
     setIsLoading(true);
     try {
       await signUp(name, email, password);
+      setSuccess('Account created successfully! Redirecting...');
       // On success, the AuthContext and Root will handle redirection
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create account.');
+      if (err instanceof Error && err.message.includes('already exists')) {
+        setError('Account already exists with this email.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to create account.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -85,19 +92,20 @@ const SignUpPage: React.FC = () => {
             </button>
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
+          {success && <p className="text-sm text-green-400">{success}</p>}
           <div>
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Creating Account...' : 'Sign Up'}
             </button>
           </div>
         </form>
-        <p className="mt-6 text-center text-sm text-pink-200">
+        <p className="mt-6 text-center text-sm text-gray-400">
           Already have an account?{' '}
-          <a href="#/signin" className="font-medium text-pink-300 hover:text-pink-200">
+          <a href="#/signin" className="font-medium text-purple-400 hover:text-purple-300">
             Sign in
           </a>
         </p>

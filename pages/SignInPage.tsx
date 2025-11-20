@@ -72,15 +72,15 @@ const SignInPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
           </div>
         </form>
-        <p className="mt-6 text-center text-sm text-pink-200">
+        <p className="mt-6 text-center text-sm text-gray-400">
           Don't have an account?{' '}
-          <a href="#/signup" className="font-medium text-pink-300 hover:text-pink-200">
+          <a href="#/signup" className="font-medium text-purple-400 hover:text-purple-300">
             Sign up now
           </a>
         </p>
