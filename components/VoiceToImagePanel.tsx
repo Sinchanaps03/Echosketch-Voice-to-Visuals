@@ -27,6 +27,8 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
     imageUrl: string;
     timestamp: string;
   }>>([]);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingPrompt, setEditingPrompt] = useState<string>('');
   const [metrics, setMetrics] = useState<{
     inferenceTime: number;
     accuracy: number;
@@ -190,6 +192,33 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
     const updated = [newSketch, ...savedSketches];
     setSavedSketches(updated);
     localStorage.setItem('echosketch-saved', JSON.stringify(updated));
+  };
+
+  const deleteSketch = (index: number) => {
+    const updated = savedSketches.filter((_, i) => i !== index);
+    setSavedSketches(updated);
+    localStorage.setItem('echosketch-saved', JSON.stringify(updated));
+  };
+
+  const startEditSketch = (index: number) => {
+    setEditingIndex(index);
+    setEditingPrompt(savedSketches[index].prompt);
+  };
+
+  const saveEditSketch = () => {
+    if (editingIndex !== null) {
+      const updated = [...savedSketches];
+      updated[editingIndex].prompt = editingPrompt;
+      setSavedSketches(updated);
+      localStorage.setItem('echosketch-saved', JSON.stringify(updated));
+      setEditingIndex(null);
+      setEditingPrompt('');
+    }
+  };
+
+  const cancelEditSketch = () => {
+    setEditingIndex(null);
+    setEditingPrompt('');
   };
 
   const handleGenerateImage = async () => {
@@ -418,7 +447,7 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
             {savedSketches.map((sketch, index) => (
               <div
                 key={index}
-                className="bg-gray-900/50 rounded-lg overflow-hidden border border-gray-700/30 hover:border-purple-500/50 transition-all duration-300"
+                className="bg-gray-900/50 rounded-lg overflow-hidden border border-gray-700/30 hover:border-purple-500/50 transition-all duration-300 relative group"
               >
                 <img
                   src={sketch.imageUrl}
@@ -428,9 +457,62 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
                 <div className="p-4 space-y-2">
                   <p className="text-sm text-gray-400 line-clamp-2">{sketch.prompt}</p>
                   <p className="text-xs text-gray-500">{sketch.timestamp}</p>
+                  
+                  {/* Edit and Delete Buttons */}
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => startEditSketch(index)}
+                      className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                      aria-label="Edit sketch description"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteSketch(index)}
+                      className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                      aria-label="Delete sketch"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingIndex !== null && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-white mb-4">Edit Sketch Description</h3>
+            <textarea
+              value={editingPrompt}
+              onChange={(e) => setEditingPrompt(e.target.value)}
+              className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:border-purple-500 focus:outline-none min-h-[120px]"
+              placeholder="Enter new description..."
+            />
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={saveEditSketch}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                Save Changes
+              </button>
+              <button
+                onClick={cancelEditSketch}
+                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
