@@ -20,6 +20,13 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [enhancedPrompt, setEnhancedPrompt] = useState<string>('');
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [savedSketches, setSavedSketches] = useState<Array<{
+    prompt: string;
+    enhancedPrompt: string;
+    imageUrl: string;
+    timestamp: string;
+  }>>([]);
   const [metrics, setMetrics] = useState<{
     inferenceTime: number;
     accuracy: number;
@@ -27,6 +34,7 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
   } | null>(null);
 
   const recognitionRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Initialize Web Speech API
@@ -92,6 +100,16 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
       console.warn('⚠️ Speech Recognition API not supported in this browser');
     }
 
+    // Load saved sketches from localStorage
+    const saved = localStorage.getItem('echosketch-saved');
+    if (saved) {
+      try {
+        setSavedSketches(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to load saved sketches:', e);
+      }
+    }
+
     return () => {
       if (recognitionRef.current) {
         try {
@@ -147,6 +165,33 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
     }
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setUploadedImage(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const saveSketch = (prompt: string, enhancedPrompt: string, imageUrl: string) => {
+    const newSketch = {
+      prompt,
+      enhancedPrompt,
+      imageUrl,
+      timestamp: new Date().toLocaleString(),
+    };
+    const updated = [newSketch, ...savedSketches];
+    setSavedSketches(updated);
+    localStorage.setItem('echosketch-saved', JSON.stringify(updated));
+  };
+
   const handleGenerateImage = async () => {
     if (!transcript.trim()) {
       alert('Please enter or speak a prompt first!');
@@ -168,6 +213,9 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
       const imageUrl = await generateImage(enhanced);
       console.log('🖼️ Image Generated:', imageUrl);
       setGeneratedImage(imageUrl);
+
+      // Save to sketches
+      saveSketch(transcript, enhanced, imageUrl);
 
       // Calculate metrics
       const inferenceTime = Date.now() - startTime;
@@ -241,6 +289,37 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
             className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:border-blue-500 focus:outline-none disabled:opacity-50"
           />
 
+          {/* Hidden File Input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+
+          {/* Upload Button */}
+          <button
+            onClick={triggerFileUpload}
+            disabled={isGenerating}
+            className="flex items-center justify-center p-4 rounded-lg bg-green-500 hover:bg-green-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Upload Image"
+          >
+            <svg
+              className="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </button>
+
           {/* Generate Button */}
           <button
             onClick={handleGenerateImage}
@@ -300,6 +379,31 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
           >
             Download Image
           </a>
+        </div>
+      )}
+
+      {/* Saved Sketches Section */}
+      {savedSketches.length > 0 && (
+        <div className="mt-8 bg-gray-800/50 backdrop-blur-sm rounded-lg p-6 border border-gray-700/50">
+          <h2 className="text-2xl font-bold text-white mb-6">Your Saved Sketches</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {savedSketches.map((sketch, index) => (
+              <div
+                key={index}
+                className="bg-gray-900/50 rounded-lg overflow-hidden border border-gray-700/30 hover:border-purple-500/50 transition-all duration-300"
+              >
+                <img
+                  src={sketch.imageUrl}
+                  alt={sketch.prompt}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-4 space-y-2">
+                  <p className="text-sm text-gray-400 line-clamp-2">{sketch.prompt}</p>
+                  <p className="text-xs text-gray-500">{sketch.timestamp}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
