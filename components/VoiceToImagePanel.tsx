@@ -462,7 +462,7 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={() => startEditSketch(index)}
-                      className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs rounded transition-colors"
                       aria-label="Edit sketch description"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -472,7 +472,7 @@ const VoiceToImagePanel: React.FC<VoiceToImagePanelProps> = ({ onMetricsUpdate }
                     </button>
                     <button
                       onClick={() => deleteSketch(index)}
-                      className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs rounded transition-colors"
                       aria-label="Delete sketch"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
