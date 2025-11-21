@@ -29,7 +29,10 @@ const SignUpPage: React.FC = () => {
       // On success, the AuthContext and Root will handle redirection
     } catch (err) {
       if (err instanceof Error && err.message.includes('already exists')) {
-        setError('Account already exists with this email.');
+        setError('Account already exists. Redirecting to Sign In...');
+        setTimeout(() => {
+          window.location.hash = '/signin';
+        }, 2000);
       } else {
         setError(err instanceof Error ? err.message : 'Failed to create account.');
       }

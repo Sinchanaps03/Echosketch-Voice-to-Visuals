@@ -5,6 +5,7 @@ interface User {
   id: string;
   name?: string;
   email: string;
+  profilePicture?: string;
 }
 
 interface AuthContextType {
@@ -15,6 +16,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
+  updateProfile: (name: string, email: string, profilePicture?: string) => Promise<void>;
 }
 
 // --- Context ---
@@ -66,7 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (foundUser) {
         const fakeToken = `jwt-token-${Date.now()}`;
-        const userData = { id: foundUser.id, email: foundUser.email, name: foundUser.name };
+        const userData = { id: foundUser.id, email: foundUser.email, name: foundUser.name, profilePicture: foundUser.profilePicture };
         
         localStorage.setItem('echosketch-token', fakeToken);
         localStorage.setItem('echosketch-user', JSON.stringify(userData));
@@ -115,6 +117,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const updateProfile = async (name: string, email: string, profilePicture?: string): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
+    await new Promise(res => setTimeout(res, 500)); // Simulate network delay
+
+    try {
+      if (!user) {
+        throw new Error('No user is currently signed in.');
+      }
+
+      // Validate username
+      if (!name || name.trim() === '') {
+        throw new Error('Username cannot be empty.');
+      }
+
+      const storedUsers = JSON.parse(localStorage.getItem('echosketch-users') || '[]');
+      
+      // Check if email is being changed and if it's already in use by another user
+      if (email !== user.email) {
+        const emailExists = storedUsers.some((u: any) => u.email === email && u.id !== user.id);
+        if (emailExists) {
+          throw new Error('Email already in use.');
+        }
+      }
+
+      // Update user in users array
+      const updatedUsers = storedUsers.map((u: any) => {
+        if (u.id === user.id) {
+          return { ...u, name, email, profilePicture };
+        }
+        return u;
+      });
+      localStorage.setItem('echosketch-users', JSON.stringify(updatedUsers));
+
+      // Update current user data
+      const updatedUserData = { ...user, name, email, profilePicture };
+      localStorage.setItem('echosketch-user', JSON.stringify(updatedUserData));
+      setUser(updatedUserData);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signOut = () => {
     setUser(null);
     setToken(null);
@@ -130,6 +179,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signUp,
     signOut,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
